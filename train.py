@@ -16,7 +16,6 @@ from torch.cuda.amp import autocast, GradScaler
 
 @dataclass
 class DialogueExample:
-    """对话样本的数据类"""
     dialogue_id: str
     sentences: List[str]
     embeddings: np.ndarray
@@ -24,22 +23,12 @@ class DialogueExample:
 
 @dataclass
 class TrainingSample:
-    """训练样本的数据类"""
     anchor_idx: int
     positive_indices: List[int]
     hard_negative_indices: List[int]
     regular_negative_indices: List[int]
 
 def load_pkl_data(data_dir: str) -> List[Dict]:
-    """
-    加载pkl格式的训练数据
-    
-    Args:
-        data_dir: 包含pkl文件的目录路径
-        
-    Returns:
-        包含所有训练数据的列表
-    """
     processed_data = []
     pkl_files = glob.glob(os.path.join(data_dir, "*.pkl"))
     
@@ -155,8 +144,7 @@ class DialogueBertModel(nn.Module):
         return outputs.last_hidden_state[:, 0, :]
     
     def get_similarity(self, sent1_emb: torch.Tensor, sent2_emb: torch.Tensor, sigma=1.0) -> torch.Tensor:
-        dis = torch.sum((sent1_emb-sent2_emb)**2, dim=1)
-        return dis
+        return torch.cosine_similarity(sent1_emb,sent2_emb)
 
 class Trainer:
     def __init__(self, 

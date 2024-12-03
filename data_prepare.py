@@ -50,7 +50,7 @@ class AffinityPropagationAlgorithm:
             ap = AffinityPropagation(
                 preference=np.min(content_similarity), 
                 affinity='precomputed', 
-                random_state=42
+                random_state=1
             ).fit(similarity_matrix)
             
             cluster_centers_indices = list(ap.cluster_centers_indices_)
@@ -59,7 +59,7 @@ class AffinityPropagationAlgorithm:
             cluster_centers_indices = self._merge_adjacent(cluster_centers_indices)
             cluster_centers_indices = [idx for idx in cluster_centers_indices if 0 < idx < len(inputs)]
             
-            self.logger.info(f"Cluster centers indices: {cluster_centers_indices}")
+            # self.logger.info(f"Cluster centers indices: {cluster_centers_indices}")
             return cluster_centers_indices
         
         except Exception as e:
@@ -100,7 +100,6 @@ class AffinityPropagationAlgorithm:
             pairwise_similarities = [similarity_matrix[i, i + 1] for i in range(len(segment_embeddings) - 1)]
             
             min_similarity_idx = np.argmin(pairwise_similarities)
-            
             new_boundary = start + min_similarity_idx + 1 
 
             if not new_boundary:
@@ -135,6 +134,7 @@ class AffinityPropagationAlgorithm:
             iteration += 1
         
         # Add start and end boundaries
+        current_seg = self._merge_adjacent(current_seg)
         full_boundaries = [0] + current_seg + [len(embeddings)]
         segments = [
             (full_boundaries[i], full_boundaries[i+1]) 
@@ -270,8 +270,10 @@ class DialoguePreprocessor:
         cluster_indices = ap_algorithm.get_final_segmentation(embeddings)
         return cluster_indices
     
-    def create_training_samples(self, example: DialogueExample) -> List[TrainingSample]:
+    def create_training_samples(self, dialogues: List[str], dialogue_id: int, example: DialogueExample) -> List[TrainingSample]:
         training_samples = []
+        total_indecs = list(range(len(dialogues)))
+        indices = [item for item in total_indecs if item != dialogue_id]
 
         for i, (start,end) in enumerate(example.core_indices):
             for j in range(start,end-1):
@@ -282,17 +284,21 @@ class DialoguePreprocessor:
                 if i < len(example.core_indices) -1:
                     hard_negatives.extend(list(range(example.core_indices[i+1][0]+2,example.core_indices[i+1][1])))
                 
-                hard_negative_samples = random.sample(hard_negatives, min(3,len(hard_negatives)))
+                hard_negative_samples = random.sample(hard_negatives, min(self.hard_nagative,len(hard_negatives)))
 
                 other_negatives = []
                 for m, (other_start,other_end) in enumerate(example.core_indices):
                     if abs(i-m) > 1:
                         other_negatives.extend(list(range(other_start,other_end)))
 
-                random_negative_samples = random.sample(other_negatives,min(6-len(hard_negative_samples),len(other_negatives)))
+                random_negative_samples = random.sample(other_negatives,min(self.ragular_negative -len(hard_negative_samples),len(other_negatives)))
 
                 random_negative_samples = [example.sentences[item] for item in random_negative_samples]
                 hard_negative_samples = [example.sentences[item] for item in hard_negative_samples]
+
+                random_index = random.choice(indices)
+                selected_item = random.sample(dialogues[random_index][1], 2)
+                random_negative_samples += selected_item
    
                 training_samples.append(TrainingSample(
                     anchor_idx=example.sentences[j],
@@ -312,7 +318,6 @@ class DialoguePreprocessor:
         
         for id,(dialogue_id, sentences) in enumerate(tqdm(dialogues, desc="Processing dialogues")):
             # 获取句子embeddings
-            print(dialogue_id)
             embeddings = self.get_sentence_embeddings(sentences)
             
             # 找到核心句子
@@ -327,7 +332,7 @@ class DialoguePreprocessor:
             )
             
             # 创建训练样本
-            training_samples = self.create_training_samples(example)
+            training_samples = self.create_training_samples(dialogues, dialogue_id, example)
             
             processed_data.append({
                 'example': example,
@@ -423,6 +428,20 @@ def parse_arguments() -> argparse.Namespace:
         default=13.0, 
         help='Weight for position-based similarity'
     )
+
+    parser.add_argument(
+        '--hard_nagative', 
+        type=int, 
+        default=3, 
+        help='the number of hard negatives'
+    )
+
+    parser.add_argument(
+        '--ragular_negative', 
+        type=int, 
+        default=6, 
+        help='the number of ragular negatives'
+    )
     
     # Device Configuration
     parser.add_argument(
@@ -462,7 +481,9 @@ def main():
         tokenizer_path=args.tokenizer_path,
         checkpoint_path=args.checkpoint_path,
         position_weight=args.position_weight,
-        device=args.device
+        device=args.device,
+        hard_nagative = args.hard_nagative,
+        ragular_negative = args.ragular_negative
     )
     
     # Process dialogues

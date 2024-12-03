@@ -79,7 +79,7 @@ class AffinityPropagationAlgorithm:
             ap = AffinityPropagation(
                 preference=np.min(content_similarity), 
                 affinity='precomputed', 
-                random_state=42
+                random_state=1
             ).fit(similarity_matrix)
             
             cluster_centers_indices = list(ap.cluster_centers_indices_)
@@ -132,13 +132,11 @@ def load_model_for_inference(
         DialogueBertModel: Model prepared for inference
     """
     if checkpoint_path and os.path.exists(checkpoint_path):
-        try:
-            checkpoint = torch.load(checkpoint_path, map_location=device)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            logging.info(f"Loaded checkpoint from {checkpoint_path}")
-        except Exception as e:
-            logging.error(f"Error loading checkpoint: {e}")
-    
+
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        logging.info(f"Loaded checkpoint from {checkpoint_path}")
+
     model.to(device)
     model.eval()  # Set model to evaluation mode
     return model
@@ -324,7 +322,7 @@ def parse_args():
                       help="Path to dialogue data")
     parser.add_argument("--checkpoint_path", type=str, required=True,
                       help="Path to checkpoint for inference")
-    parser.add_argument("--position_weight", type=str, default=0.01,
+    parser.add_argument("--position_weight", type=float, default=0.01,
                       help="position weight of AP algorithm")
     
 
