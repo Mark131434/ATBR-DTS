@@ -38,7 +38,7 @@ DialSeg711 is a real-world dataset consisting of 711 English dialogues, sourced 
 
 #### Details of Dialogue Datasets
 
-| Datasets                         | DialSeg711  | DocDial-2  |
+| Datasets                         | DialSeg711  | Doc2Dial  |
 |-----------------------------------|-------------|------------|
 | #samples                          | 711         | 4100       |
 | #Avg. Topic Segments/Dialogue     | 4.9         | 3.7        |
