@@ -32,11 +32,11 @@ pip install -r requirements.txt
 
 ## Usage
 
-### 1. Data Deacription
+### 1. Data Description
 
 DialSeg711 is a real-world dataset consisting of 711 English dialogues, sourced from MultiWOZ and KVRET. It exhibits an average of 4.9 topic segments and 5.6 utterances per segment. Doc2Dial is a synthetic dataset comprising over 4,100 English conversations grounded in 450+ documents across four domains. It presents an average of 3.7 topic segments and 3.5 utterances per segment.
 
-## Details of Dialogue Datasets
+#### Details of Dialogue Datasets
 
 | Datasets                         | DialSeg711  | DocDial-2  |
 |-----------------------------------|-------------|------------|
