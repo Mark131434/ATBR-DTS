@@ -1,4 +1,4 @@
-# Dynamic Topic Boundary Refinement (ATBR) for Dialogue Topic Segmentation
+# Dynamic Topic Boundary Refinement (DTBR) for Dialogue Topic Segmentation
 
 ## Overview
 
